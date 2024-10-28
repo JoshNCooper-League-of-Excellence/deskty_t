@@ -139,19 +139,27 @@ void draw_winman(winman_t *winman) {
 
         { // Close button // TODO: FIX ME.. Shouldn't be here, and it looks
           // TERRIBLE.
-          Rectangle closeButton = {window->bounds.x + window->bounds.width - 15,
-                                   window->bounds.y - 15, 10, 10};
-          DrawRectangleRec(closeButton, RED);
-          if (CheckCollisionPointRec(GetMousePosition(), closeButton) &&
-              IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            printf("Start closing window\n");
-            for (int j = i; j < winman->window_count - 1; ++j) {
-              winman->windows[j] = winman->windows[j + 1];
+          Rectangle closeButton = {window->bounds.x + window->bounds.width - 12,
+                                   window->bounds.y - Y_PADDING_TITLE - 1, 9, 9};
+
+          if (CheckCollisionPointRec(GetMousePosition(), closeButton)) {
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+              for (int j = i; j < winman->window_count - 1; ++j) {
+                winman->windows[j] = winman->windows[j + 1];
+              }
+              --winman->window_count;
+              // TODO: fix this. If we don't skip the rest of the frame when we close a window,
+              // we get a nasty hangup that takes a very long time.
+              return;
             }
-            printf("Closed window\n");
-            winman->window_count--;
-            continue;
+
+            DrawRectangleRounded(closeButton, 0.5, SUBDIVISIONS, WHITE);
+            DrawText("X", closeButton.x + 2, closeButton.y - 1, FONT_SIZE, BLACK);
+          } else {
+            DrawRectangleRounded(closeButton, 0.5, SUBDIVISIONS, RED);
+            DrawText("X", closeButton.x + 2, closeButton.y - 1, FONT_SIZE, WHITE);
           }
+
         }
 
         DrawRectangleRoundedLinesEx(window->bounds, WINDOW_BORDER_ROUNDNESS,
@@ -337,7 +345,7 @@ void update_winman(winman_t *winman) {
       for (int x = window->bounds.x; x < window->bounds.x + window->bounds.width; ++x)
         for (int y = window->bounds.y; y < window->bounds.y + window->bounds.height; ++y) {
           int8_t current_value = bitset_get(hit_mask, x, y);
-          if (current_value == -1 || (winman->windows[current_value].layer < window->layer) || window->focused) {
+          if (current_value == BITSET_UNSET_VALUE || (winman->windows[current_value].layer < window->layer) || window->focused) {
             bitset_set(hit_mask, x, y, i);
           }
         }
