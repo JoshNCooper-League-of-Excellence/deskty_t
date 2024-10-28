@@ -1,5 +1,6 @@
 
 #include "winman.h"
+#include <dlfcn.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -118,11 +119,17 @@ void draw_winman(winman_t *winman) {
   update_input_state(&winman->input_state);
   int layer = 0;
   int drawn_count = 0;
-  while (drawn_count < winman->window_count) {
+  int windows_to_show = winman->window_count;
+  while (drawn_count < windows_to_show) {
     for (int i = 0; i < winman->window_count; ++i) {
       window_t *window = &winman->windows[i];
-      if (window->layer == layer) {
 
+      if ((window->flags & WINDOW_SHOWN) == 0) {
+        windows_to_show--;
+        continue;
+      }
+
+      if (window->layer == layer) {
         // draw title bar.
         {
           auto x = window->bounds.x;
@@ -130,36 +137,45 @@ void draw_winman(winman_t *winman) {
           auto half_width = window->bounds.width / 2;
           auto text_w = MeasureText(window->title, FONT_SIZE) / 2.0;
           Rectangle title_rect = {x, y, window->bounds.width, Y_PADDING_TITLE};
-
           DrawRectangleRounded(title_rect, TITLE_BAR_ROUNDNESS, SUBDIVISIONS,
                                window->border_color);
           DrawText(window->title, window->bounds.x + half_width - text_w, y,
                    FONT_SIZE, BLACK);
         }
 
-        { // Close button // TODO: FIX ME.. Shouldn't be here, and it looks
+        {
+          // If the user decided to kill the application, this is how we do it.
+          if (window->should_close) {
+            goto kill_window;
+          }
+          // Close button // TODO: FIX ME.. Shouldn't be here, and it looks
           // TERRIBLE.
           Rectangle closeButton = {window->bounds.x + window->bounds.width - 12,
-                                   window->bounds.y - Y_PADDING_TITLE - 1, 9, 9};
+                                   window->bounds.y - Y_PADDING_TITLE - 1, 9,
+                                   9};
 
           if (CheckCollisionPointRec(GetMousePosition(), closeButton)) {
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            kill_window:
+              free_window(window);
               for (int j = i; j < winman->window_count - 1; ++j) {
                 winman->windows[j] = winman->windows[j + 1];
               }
               --winman->window_count;
-              // TODO: fix this. If we don't skip the rest of the frame when we close a window,
-              // we get a nasty hangup that takes a very long time.
+              // TODO: fix this. If we don't skip the rest of the frame when we
+              // close a window, we get a nasty hangup that takes a very long
+              // time.
               return;
             }
 
             DrawRectangleRounded(closeButton, 0.5, SUBDIVISIONS, WHITE);
-            DrawText("X", closeButton.x + 2, closeButton.y - 1, FONT_SIZE, BLACK);
+            DrawText("X", closeButton.x + 2, closeButton.y - 1, FONT_SIZE,
+                     BLACK);
           } else {
             DrawRectangleRounded(closeButton, 0.5, SUBDIVISIONS, RED);
-            DrawText("X", closeButton.x + 2, closeButton.y - 1, FONT_SIZE, WHITE);
+            DrawText("X", closeButton.x + 2, closeButton.y - 1, FONT_SIZE,
+                     WHITE);
           }
-
         }
 
         DrawRectangleRoundedLinesEx(window->bounds, WINDOW_BORDER_ROUNDNESS,
@@ -342,10 +358,15 @@ void update_winman(winman_t *winman) {
   for (int i = 0; i < winman->window_count; ++i) {
     window_t *window = &winman->windows[i];
     if (window->flags & WINDOW_SHOWN) {
-      for (int x = window->bounds.x; x < window->bounds.x + window->bounds.width; ++x)
-        for (int y = window->bounds.y; y < window->bounds.y + window->bounds.height; ++y) {
+
+      auto range_x = window->bounds.x + window->bounds.width;
+      auto range_y = window->bounds.y + window->bounds.height;
+      for (int x = window->bounds.x; x < range_x; ++x)
+        for (int y = window->bounds.y; y < range_y; ++y) {
           int8_t current_value = bitset_get(hit_mask, x, y);
-          if (current_value == BITSET_UNSET_VALUE || (winman->windows[current_value].layer < window->layer) || window->focused) {
+          if (current_value == BITSET_UNSET_VALUE ||
+              winman->windows[current_value].layer < window->layer ||
+              window->focused) {
             bitset_set(hit_mask, x, y, i);
           }
         }
@@ -355,8 +376,7 @@ void update_winman(winman_t *winman) {
   Vector2 mouse_pos = GetMousePosition();
 
   // check if the mouse is over any window
-  int8_t window_index =
-      bitset_get(&winman->hit_mask, mouse_pos.x, mouse_pos.y);
+  int8_t window_index = bitset_get(&winman->hit_mask, mouse_pos.x, mouse_pos.y);
 
   if (window_index >= 0 && window_index <= 48) {
     window_t *window = &winman->windows[window_index];
@@ -379,4 +399,11 @@ void update_winman(winman_t *winman) {
       }
     }
   }
+}
+void free_window(window_t *window) {
+  window->flags &= ~WINDOW_SHOWN;
+  window->deinit(window);
+  dlclose(window->dl_handle);
+  // basically memset(0) the struct.
+  *window = (window_t){0};
 }

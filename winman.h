@@ -7,28 +7,12 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
+#include "bitset.h"
 
 static FilePathList load_app_database() { return LoadDirectoryFiles("./user"); }
 
-static inline int64_t clampi(int64_t v, int64_t min, int64_t max) {
-  if (v < min)
-    return min;
-  if (v > max)
-    return max;
-  return v;
-}
-
-static inline double clampf(double v, double min, double max) {
-  if (v < min)
-    return min;
-  if (v > max)
-    return max;
-  return v;
-}
-
-static inline double minf(double a, double b) { return a < b ? a : b; }
+#define clamp(v, min, max) ((v) < (min) ? (min) : ((v) > (max) ? (max) : (v)))
+#define min(a, b) ((a) < (b) ? (a) : (b))
 
 typedef enum Shape {
   DRAW_RECTANGLE,
@@ -51,11 +35,11 @@ typedef struct rl_draw_command {
 } rl_draw_command_t;
 
 typedef struct {
-  bool keys[349]; // NOT ALL VALUES IN HERE POINT TO A KEY. USE RAYLIB MACROS
+  // NOT ALL VALUES IN HERE POINT TO A KEY. USE RAYLIB MACROS TO GET KEYS
+  bool keys[349];
   bool mouse_buttons[3];
   Vector2 mouse_position;
   Vector2 mouse_wheel;
-
 } input_state_t;
 
 static void update_input_state(input_state_t *state);
@@ -84,12 +68,12 @@ typedef struct window_t {
   int stack_length;
   int layer;
   bool focused;
+  int flags;
 
   // .so stuff
   void *dl_handle;
   window_callback init, update, deinit;
   input_state_t *input_state;
-  int flags;
 } window_t;
 
 static void draw_rectangle(window_t *window, Color color, Vector2 position,
@@ -129,58 +113,6 @@ static void draw_triangle(window_t *window, Color color, Vector2 position,
   }
 }
 
-#define BITSET_UNSET_VALUE -1
-
-typedef struct bitset_t {
-  uint64_t *values;
-  int width, height;
-} bitset_t;
-
-static inline bitset_t new_bitset(int width, int height) {
-  int n_bytes = width * height;
-  int n_values = (n_bytes + 7) / 8;
-  bitset_t mask = {
-    .width = width,
-    .height = height,
-    .values = calloc(n_values, sizeof(uint64_t)),
-  };
-  return mask;
-}
-
-static inline void bitset_clear_all(bitset_t *mask) {
-  int n_values = (mask->width * mask->height + 7) / 8;
-  memset(mask->values, BITSET_UNSET_VALUE, n_values * sizeof(uint64_t));
-}
-
-static inline void free_bitset(bitset_t *mask) { free(mask->values); }
-
-static inline int8_t bitset_get(bitset_t *mask, int x, int y) {
-  if (x < 0 || x >= mask->width || y < 0 || y >= mask->height)  return 0;
-  int index = y * mask->width + x;
-  int ind_index = index / 8;
-  int offset = (index % 8) * 8;
-  return (mask->values[ind_index] >> offset) & 0xFF;
-}
-
-static inline void bitset_set(bitset_t *mask, int x, int y, int8_t value) {
-  if (x < 0 || x >= mask->width || y < 0 || y >= mask->height) return;
-  int index = y * mask->width + x;
-  int int_idx = index / 8;
-  int offset = (index % 8) * 8;
-  // clear
-  mask->values[int_idx] &= ~(0xFFULL << offset);
-  // set
-  mask->values[int_idx] |= ((uint64_t)value << offset);
-}
-
-static inline void bitset_clear(bitset_t *mask, int x, int y) {
-  if (x < 0 || x >= mask->width || y < 0 || y >= mask->height) return;
-  int index = y * mask->width + x;
-  int int_idx = index / 8;
-  int offset = (index % 8) * 8;
-  mask->values[int_idx] &= ~(0xFFULL << offset); // Clear the value
-}
-
 typedef struct winman_t {
   window_t windows[48];
   int window_count;
@@ -190,6 +122,8 @@ typedef struct winman_t {
 } winman_t;
 
 window_t new_window(struct winman_t *winman);
+void free_window(window_t *window);
+
 void _internal_draw_all_commands_window(window_t *window);
 winman_t new_winman();
 void load_app(winman_t *winman, const char *path);
@@ -207,6 +141,5 @@ static bool is_key_pressed(input_state_t *state, int key) {
   previous_keys[key] = state->keys[key];
   return pressed;
 }
-
 
 #endif
