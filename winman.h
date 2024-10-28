@@ -83,6 +83,7 @@ typedef struct window_t {
   rl_draw_command_t draw_command_stack[2048];
   int stack_length;
   int layer;
+  bool focused;
 
   // .so stuff
   void *dl_handle;
@@ -146,12 +147,12 @@ static inline bitset_t new_bitset(int width, int height) {
 
 static inline void bitset_clear_all(bitset_t *mask) {
   int n_values = (mask->width * mask->height + 7) / 8;
-  memset(mask->values, 0, n_values * sizeof(uint64_t));
+  memset(mask->values, -1, n_values * sizeof(uint64_t));
 }
 
 static inline void free_bitset(bitset_t *mask) { free(mask->values); }
 
-static inline uint8_t bitset_get(bitset_t *mask, int x, int y) {
+static inline int8_t bitset_get(bitset_t *mask, int x, int y) {
   if (x < 0 || x >= mask->width || y < 0 || y >= mask->height)  return 0;
   int index = y * mask->width + x;
   int ind_index = index / 8;
@@ -159,7 +160,7 @@ static inline uint8_t bitset_get(bitset_t *mask, int x, int y) {
   return (mask->values[ind_index] >> offset) & 0xFF;
 }
 
-static inline void bitset_set(bitset_t *mask, int x, int y, uint8_t value) {
+static inline void bitset_set(bitset_t *mask, int x, int y, int8_t value) {
   if (x < 0 || x >= mask->width || y < 0 || y >= mask->height) return;
 
   int index = y * mask->width + x;
@@ -198,5 +199,17 @@ void load_app(winman_t *winman, const char *path);
 
 void update_winman(winman_t *winman);
 void draw_winman(winman_t *winman);
+
+static bool is_key_down(input_state_t *state, int key) {
+  return state->keys[key];
+}
+
+static bool is_key_pressed(input_state_t *state, int key) {
+  static bool previous_keys[349] = {0};
+  bool pressed = state->keys[key] && !previous_keys[key];
+  previous_keys[key] = state->keys[key];
+  return pressed;
+}
+
 
 #endif

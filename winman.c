@@ -3,9 +3,9 @@
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define SCREEN_DIVISION_FACTOR 6
+#define FOCUSED_LAYER 100
 
 window_t new_window(winman_t *winman) {
   window_t window = {0};
@@ -99,9 +99,20 @@ void load_app(winman_t *winman, const char *path) {
     return;
   }
 
+  window.flags |= WINDOW_SHOWN;
+
   window.init(&window);
   winman->windows[winman->window_count++] = window;
 };
+
+// These are constants used for drawing the window, They are temporary, and
+// should later be replaced with an extensible styling system.
+#define FONT_SIZE 5
+#define Y_PADDING 10
+#define TITLE_BAR_ROUNDNESS 0.3
+#define WINDOW_BORDER_ROUNDNESS 0.05
+#define SUBDIVISIONS 6
+#define Y_PADDING_TITLE 8
 
 void draw_winman(winman_t *winman) {
   update_input_state(&winman->input_state);
@@ -115,18 +126,38 @@ void draw_winman(winman_t *winman) {
         // draw title bar.
         {
           auto x = window->bounds.x;
-          auto y = window->bounds.y - 10;
-          DrawRectangleRounded((Rectangle){x, y, window->bounds.width, 8}, 0.1,
-                               6, window->border_color);
-          DrawText(window->title,
-                   window->bounds.x + (window->bounds.width / 2) -
-                       (MeasureText(window->title, 5) / 2.0),
-                   y, 5, BLACK);
+          auto y = window->bounds.y - Y_PADDING;
+          auto half_width = window->bounds.width / 2;
+          auto text_w = MeasureText(window->title, FONT_SIZE) / 2.0;
+          Rectangle title_rect = {x, y, window->bounds.width, Y_PADDING_TITLE};
+
+          DrawRectangleRounded(title_rect, TITLE_BAR_ROUNDNESS, SUBDIVISIONS,
+                               window->border_color);
+          DrawText(window->title, window->bounds.x + half_width - text_w, y,
+                   FONT_SIZE, BLACK);
         }
 
-        DrawRectangleRoundedLinesEx(window->bounds, 0.05, 6,
-                                    window->border_thickness,
+        { // Close button // TODO: FIX ME.. Shouldn't be here, and it looks
+          // TERRIBLE.
+          Rectangle closeButton = {window->bounds.x + window->bounds.width - 15,
+                                   window->bounds.y - 15, 10, 10};
+          DrawRectangleRec(closeButton, RED);
+          if (CheckCollisionPointRec(GetMousePosition(), closeButton) &&
+              IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            printf("Start closing window\n");
+            for (int j = i; j < winman->window_count - 1; ++j) {
+              winman->windows[j] = winman->windows[j + 1];
+            }
+            printf("Closed window\n");
+            winman->window_count--;
+            continue;
+          }
+        }
+
+        DrawRectangleRoundedLinesEx(window->bounds, WINDOW_BORDER_ROUNDNESS,
+                                    SUBDIVISIONS, window->border_thickness,
                                     window->border_color);
+
         window->input_state = &winman->input_state;
 
         window->update(window);
@@ -303,40 +334,35 @@ void update_winman(winman_t *winman) {
   for (int i = 0; i < winman->window_count; ++i) {
     window_t *window = &winman->windows[i];
     if (window->flags & WINDOW_SHOWN) {
-      for (int x = window->bounds.x; x < window->bounds.width; ++x) {
-        for (int y = window->bounds.y; y < window->bounds.height; ++y) {
-          bitset_set(hit_mask, x, y, i);
+      for (int x = window->bounds.x; x < window->bounds.x + window->bounds.width; ++x)
+        for (int y = window->bounds.y; y < window->bounds.y + window->bounds.height; ++y) {
+          int8_t current_value = bitset_get(hit_mask, x, y);
+          if (current_value == -1 || (winman->windows[current_value].layer < window->layer) || window->focused) {
+            bitset_set(hit_mask, x, y, i);
+          }
         }
-      }
     }
   }
 
-  for (int i = 0; i < winman->window_count; ++i) {
-    window_t *window = &winman->windows[i];
-    // Close button
-    Rectangle closeButton = {window->bounds.x + window->bounds.width - 15,
-                             window->bounds.y - 15, 10, 10};
-    DrawRectangleRec(closeButton, RED);
-    if (CheckCollisionPointRec(GetMousePosition(), closeButton) &&
-        IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-      printf("Start closing window\n");
-      for (int j = i; j < winman->window_count - 1; ++j) {
-        winman->windows[j] = winman->windows[j + 1];
-      }
-      printf("Closed window\n");
-      winman->window_count--;
-      continue;
-    }
+  Vector2 mouse_pos = GetMousePosition();
 
+  // check if the mouse is over any window
+  int8_t window_index =
+      bitset_get(&winman->hit_mask, mouse_pos.x, mouse_pos.y);
+
+  if (window_index >= 0 && window_index <= 48) {
+    window_t *window = &winman->windows[window_index];
     Vector2 delta = GetMouseDelta();
 
-    // Dragging
     if (CheckCollisionPointRec(GetMousePosition(), window->bounds)) {
       if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+        for (int i = 0; i < winman->window_count; ++i) {
+          winman->windows[i].focused = false;
+        }
+        window->focused = true;
         window->bounds.x += delta.x;
         window->bounds.y += delta.y;
       }
-
       if (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) {
         if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
           window->bounds.width += delta.x;
