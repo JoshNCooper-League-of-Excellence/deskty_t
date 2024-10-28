@@ -1,5 +1,5 @@
 COMPILER := clang
-COMPILER_FLAGS := -std=c23
+COMPILER_FLAGS := -std=c23 -g
 LD_FLAGS := -lraylib -lm
 OBJ_DIR := objs
 BIN_DIR := bin

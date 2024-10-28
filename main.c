@@ -1,15 +1,16 @@
-#include "loader.h"
-#include "rl.h"
 #include "winman.h"
 #include <raylib.h>
+#include <stdio.h>
 
 int main(void) {
   InitWindow(800, 600, "Window Manager");
 
   winman_t winman = new_winman();
 
-  winman.windows[winman.window_count++] = load_app(winman.app_database.paths[0]);
-
+  for (int i = 0; i < winman.app_database.count; ++i) {
+    load_app(&winman, winman.app_database.paths[i]);
+    printf("Loaded app %s\n", winman.app_database.paths[i]);
+  }
 
   SetTargetFPS(60);
   while(!WindowShouldClose()) {

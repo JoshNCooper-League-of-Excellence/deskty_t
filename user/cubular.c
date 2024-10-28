@@ -1,5 +1,5 @@
 
-#include "../rl.h"
+#include "../winman.h"
 #include <raylib.h>
 
 void init(window_t* window) {
