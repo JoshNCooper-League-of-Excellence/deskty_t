@@ -3,7 +3,7 @@
 #include <raylib.h>
 
 void init(window_t* window) {
-  window->title = "This is my title.";
+  window->title = "Cubular Mode.";
 }
 
 void update(window_t* window) {
@@ -11,16 +11,16 @@ void update(window_t* window) {
   draw_rectangle(window, WHITE, pos, (Vector2){24, 24});
 
   if (window->input_state->keys[KEY_W] == true) {
-    pos.y += 0.5;
+    pos.y += 1;
   }
   if (window->input_state->keys[KEY_S] == true) {
-    pos.y -= 0.5;
+    pos.y -= 1;
   }
   if (window->input_state->keys[KEY_A] == true) {
-    pos.x -= 0.5;
+    pos.x -= 1;
   }
   if (window->input_state->keys[KEY_D] == true) {
-    pos.x += 0.5;
+    pos.x += 1;
   }
 
 }

@@ -5,36 +5,38 @@
 
 window_t new_window(winman_t *winman) {
   window_t window = {0};
-  window.boundary = (Rectangle){24, 24, 800.0 / 6, 600.0 / 6};
+  window.boundary = (Rectangle){10, 20, 800.0 / 6, 600.0 / 6};
+
+  Vector2 pos = {0, 20};
+  for (int i = 0; i < winman->window_count; ++i) {
+    window_t *other = &winman->windows[i];
+    if (CheckCollisionRecs(window.boundary, other->boundary)) {
+      pos.x = other->boundary.x + other->boundary.width + window.border_thickness;
+    }
+    window.boundary = (Rectangle){pos.x, pos.y, 800.0 / 6, 600.0 / 6};
+  }
+
   window.border_thickness = 2.0;
   window.border_color = RAYWHITE;
   return window;
 }
 
+#define COMPILE_COMMAND_FORMAT "clang -std=c23 -shared -fPIC -o %s %s 1>&2 2>&1"
+
+static char so_path[512];
+static char compile_command[512];
+
 void load_app(winman_t *winman, const char *path) {
   window_t window = new_window(winman);
   window.title = path;
 
-  char so_path[256];
-  char compile_command[512];
+  const char *name = GetFileNameWithoutExt(path);
+  snprintf(so_path, sizeof(so_path), "binaries/%s.so", name);
 
-  // Get the output path, and format a system call to compile the .so
-  {
-    const char *name = GetFileNameWithoutExt(path);
-    snprintf(so_path, sizeof(so_path), "binaries/%s.so", name);
-
-#define COMPILE_COMMAND_FORMAT "clang -std=c23 -shared -fPIC -o %s %s"
-    int required_length =
-        snprintf(nullptr, 0, COMPILE_COMMAND_FORMAT, so_path, path);
-    snprintf(compile_command, required_length + 1, COMPILE_COMMAND_FORMAT,
-             so_path, path);
-
-#if DEBUG
-    printf("app path :: %s\n", path);
-    printf("app name :: %s\n", name);
-    printf("app .so  :: %s\n", so_path);
-#endif
-  }
+  int required_length =
+      snprintf(nullptr, 0, COMPILE_COMMAND_FORMAT, so_path, path);
+  snprintf(compile_command, required_length + 1, COMPILE_COMMAND_FORMAT,
+            so_path, path);
 
   printf("Compiling... %s :: %s\n", so_path, compile_command);
   int result = system(compile_command);
@@ -62,13 +64,10 @@ void load_app(winman_t *winman, const char *path) {
     return;
   }
 
-  // compile the binary to an so, put it in binaries/name.so ✅
-  // load the so. ✅
-  // get the init, update, and deinit function pointers. ✅
-
   window.init(&window);
   winman->windows[winman->window_count++] = window;
 };
+
 void draw_winman(winman_t *winman) {
   update_input_state(&winman->input_state);
   int layer = 0;
