@@ -1,23 +1,52 @@
 
 #include "winman.h"
+#include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#define SCREEN_DIVISION_FACTOR 6
 
 window_t new_window(winman_t *winman) {
   window_t window = {0};
-  window.boundary = (Rectangle){10, 20, 800.0 / 6, 600.0 / 6};
+  window.bounds =
+      (Rectangle){10, 20, (float)GetScreenWidth() / SCREEN_DIVISION_FACTOR,
+                  (float)GetScreenHeight() / SCREEN_DIVISION_FACTOR};
 
-  Vector2 pos = {0, 20};
-  for (int i = 0; i < winman->window_count; ++i) {
-    window_t *other = &winman->windows[i];
-    if (CheckCollisionRecs(window.boundary, other->boundary)) {
-      pos.x = other->boundary.x + other->boundary.width + window.border_thickness;
-    }
-    window.boundary = (Rectangle){pos.x, pos.y, 800.0 / 6, 600.0 / 6};
+  Vector2 pos = {10, 20};
+  bool found_position = false;
+
+  Vector2 screen_size = {GetScreenWidth(), GetScreenHeight()};
+
+#define WIN_RECT                                                               \
+  {                                                                            \
+    pos.x, pos.y, screen_size.x / SCREEN_DIVISION_FACTOR,                      \
+        screen_size.y / SCREEN_DIVISION_FACTOR                                 \
   }
 
+  while (!found_position) {
+    found_position = true;
+    for (int i = 0; i < winman->window_count; ++i) {
+      window_t *o = &winman->windows[i];
+      Rectangle rect = WIN_RECT;
+      if (CheckCollisionRecs(rect, o->bounds)) {
+        pos.x = o->bounds.x + o->bounds.width + window.border_thickness;
+        if (pos.x + screen_size.x / SCREEN_DIVISION_FACTOR > screen_size.x) {
+          pos.x = 10;
+          pos.y +=
+              screen_size.y / SCREEN_DIVISION_FACTOR + window.border_thickness;
+        }
+        found_position = false;
+        break;
+      }
+    }
+  }
+
+  window.bounds =
+      (Rectangle){pos.x, pos.y, screen_size.x / SCREEN_DIVISION_FACTOR,
+                  screen_size.y / SCREEN_DIVISION_FACTOR};
   window.border_thickness = 2.0;
-  window.border_color = RAYWHITE;
+  window.border_color = DARKGRAY;
   return window;
 }
 
@@ -27,6 +56,11 @@ static char so_path[512];
 static char compile_command[512];
 
 void load_app(winman_t *winman, const char *path) {
+  if (winman->window_count >= 48) {
+    printf("reached maximum number of windows!");
+    return;
+  }
+
   window_t window = new_window(winman);
   window.title = path;
 
@@ -36,9 +70,10 @@ void load_app(winman_t *winman, const char *path) {
   int required_length =
       snprintf(nullptr, 0, COMPILE_COMMAND_FORMAT, so_path, path);
   snprintf(compile_command, required_length + 1, COMPILE_COMMAND_FORMAT,
-            so_path, path);
+           so_path, path);
 
-  printf("Compiling... %s :: %s\n", so_path, compile_command);
+  printf("compiling... \e[1;32m%s\e[0m, :: \e[1;34m%s\e[0m\n", so_path,
+         compile_command);
   int result = system(compile_command);
 
   if (result != 0) {
@@ -53,9 +88,9 @@ void load_app(winman_t *winman, const char *path) {
     return;
   }
 
-  window.init = (window_callback)dlsym(window.dl_handle, "init");
-  window.update = (window_callback)dlsym(window.dl_handle, "update");
-  window.deinit = (window_callback)dlsym(window.dl_handle, "deinit");
+  window.init = dlsym(window.dl_handle, "init");
+  window.update = dlsym(window.dl_handle, "update");
+  window.deinit = dlsym(window.dl_handle, "deinit");
 
   if (!window.init || !window.update || !window.deinit) {
     printf("Unable to find init, update, or deinit functions in %s\n", so_path);
@@ -79,80 +114,49 @@ void draw_winman(winman_t *winman) {
 
         // draw title bar.
         {
-          auto x = window->boundary.x;
-          auto y = window->boundary.y - 10;
-          DrawRectangleRounded((Rectangle){x, y, window->boundary.width, 8},
-                               0.1, 6, window->border_color);
+          auto x = window->bounds.x;
+          auto y = window->bounds.y - 10;
+          DrawRectangleRounded((Rectangle){x, y, window->bounds.width, 8}, 0.1,
+                               6, window->border_color);
           DrawText(window->title,
-                   window->boundary.x + (window->boundary.width / 2) -
+                   window->bounds.x + (window->bounds.width / 2) -
                        (MeasureText(window->title, 5) / 2.0),
                    y, 5, BLACK);
         }
 
-        DrawRectangleRoundedLinesEx(window->boundary, 0.05, 6,
+        DrawRectangleRoundedLinesEx(window->bounds, 0.05, 6,
                                     window->border_thickness,
                                     window->border_color);
         window->input_state = &winman->input_state;
 
-        {
-          // Close button
-          Rectangle closeButton = {window->boundary.x + window->boundary.width -
-                                       15,
-                                   window->boundary.y - 15, 10, 10};
-          DrawRectangleRec(closeButton, RED);
-          if (CheckCollisionPointRec(GetMousePosition(), closeButton) &&
-              IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            printf("Start closing window\n");
-            for (int j = i; j < winman->window_count - 1; ++j) {
-              winman->windows[j] = winman->windows[j + 1];
-            }
-            printf("Closed window\n");
-            winman->window_count--;
-            continue;
-          }
-
-          // Dragging
-          if (CheckCollisionPointRec(GetMousePosition(),
-                                     (Rectangle){window->boundary.x,
-                                                 window->boundary.y - 10,
-                                                 window->boundary.width, 10})) {
-            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-              window->boundary.x += GetMouseDelta().x;
-              window->boundary.y += GetMouseDelta().y;
-            }
-
-            // Resizing with Alt key
-            if (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) {
-              if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-                window->boundary.width += GetMouseDelta().x;
-                window->boundary.height += GetMouseDelta().y;
-              }
-            }
-          }
-        }
-
         window->update(window);
-        window_internal_draw_all_commands(window);
+        _internal_draw_all_commands_window(window);
         drawn_count++;
       }
     }
     layer++;
   }
 }
+
 winman_t new_winman() {
   winman_t winman = {0};
   winman.app_database = load_app_database();
+  winman.hit_mask = new_bitset(GetScreenWidth(), GetScreenHeight());
   return winman;
 }
-void window_internal_draw_all_commands(window_t *window) {
-  BeginScissorMode(window->boundary.x, window->boundary.y,
-                   window->boundary.width, window->boundary.height);
+
+// Draw all the commands for a window's draw command stack.
+// Scissor cull the commands to the window's bounds.
+// Adjust each shape to the window's own pixel space.
+void _internal_draw_all_commands_window(window_t *window) {
+  BeginScissorMode(window->bounds.x, window->bounds.y, window->bounds.width,
+                   window->bounds.height);
   while (window->stack_length > 0) {
     auto command = window->draw_command_stack[--window->stack_length];
 
     // put into window space.
     command.position = Vector2Add(
-        command.position, (Vector2){window->boundary.x, window->boundary.y});
+        command.position, (Vector2){window->bounds.x, window->bounds.y});
 
     switch (command.shape) {
     case DRAW_RECTANGLE:
@@ -171,6 +175,7 @@ void window_internal_draw_all_commands(window_t *window) {
   }
   EndScissorMode();
 }
+
 static void update_input_state(input_state_t *state) {
   state->keys[KEY_APOSTROPHE] = IsKeyDown(KEY_APOSTROPHE);
   state->keys[KEY_COMMA] = IsKeyDown(KEY_COMMA);
@@ -287,4 +292,57 @@ static void update_input_state(input_state_t *state) {
   }
 
   state->mouse_position = GetMousePosition();
+}
+
+void update_winman(winman_t *winman) {
+  bitset_t *hit_mask = &winman->hit_mask;
+  bitset_clear_all(hit_mask);
+
+  // set the bitmask for each window, where the value in the bitmask at any
+  // given pixel, is an index into winman->windows[];
+  for (int i = 0; i < winman->window_count; ++i) {
+    window_t *window = &winman->windows[i];
+    if (window->flags & WINDOW_SHOWN) {
+      for (int x = window->bounds.x; x < window->bounds.width; ++x) {
+        for (int y = window->bounds.y; y < window->bounds.height; ++y) {
+          bitset_set(hit_mask, x, y, i);
+        }
+      }
+    }
+  }
+
+  for (int i = 0; i < winman->window_count; ++i) {
+    window_t *window = &winman->windows[i];
+    // Close button
+    Rectangle closeButton = {window->bounds.x + window->bounds.width - 15,
+                             window->bounds.y - 15, 10, 10};
+    DrawRectangleRec(closeButton, RED);
+    if (CheckCollisionPointRec(GetMousePosition(), closeButton) &&
+        IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+      printf("Start closing window\n");
+      for (int j = i; j < winman->window_count - 1; ++j) {
+        winman->windows[j] = winman->windows[j + 1];
+      }
+      printf("Closed window\n");
+      winman->window_count--;
+      continue;
+    }
+
+    Vector2 delta = GetMouseDelta();
+
+    // Dragging
+    if (CheckCollisionPointRec(GetMousePosition(), window->bounds)) {
+      if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+        window->bounds.x += delta.x;
+        window->bounds.y += delta.y;
+      }
+
+      if (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) {
+        if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
+          window->bounds.width += delta.x;
+          window->bounds.height += delta.y;
+        }
+      }
+    }
+  }
 }

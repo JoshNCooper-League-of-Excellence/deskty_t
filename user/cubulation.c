@@ -18,10 +18,10 @@ void update(window_t* window) {
     cubulator->x += velocity->x;
     cubulator->y += velocity->y;
 
-    if (cubulator->x <= 0 || cubulator->x + cubulator->width >= window->boundary.width) {
+    if (cubulator->x <= 0 || cubulator->x + cubulator->width >= window->bounds.width) {
       velocity->x *= -1;
     }
-    if (cubulator->y <= 0 || cubulator->y + cubulator->height >= window->boundary.height) {
+    if (cubulator->y <= 0 || cubulator->y + cubulator->height >= window->bounds.height) {
       velocity->y *= -1;
     }
 
