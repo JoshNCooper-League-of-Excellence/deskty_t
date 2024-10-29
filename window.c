@@ -4,6 +4,7 @@
 #include "os.h"
 #include <dlfcn.h>
 #include <raylib.h>
+#include <stdio.h>
 
 #define SCREEN_DIVISION_FACTOR 6
 #define FOCUSED_LAYER 100
@@ -162,37 +163,28 @@ void update_hit_mask(procman_t *procman) {
   bitset_clear_all(&procman->hit_mask);
   for (int i = 0; i < procman->process_count; ++i) {
     process_t *process = &procman->processes[i];
-
-    if ((process->flags & PROCESS_HAS_WINDOW) == 0) {
-      continue;
-    }
+    if ((process->flags & PROCESS_HAS_WINDOW) == 0) continue;
 
     window_t *window = &process->window;
-
     if (window->flags & WINDOW_SHOWN) {
       auto range_x = window->bounds.x + window->bounds.width;
       auto range_y = window->bounds.y + window->bounds.height;
       for (int x = window->bounds.x; x < range_x; ++x)
         for (int y = window->bounds.y; y < range_y; ++y) {
           int8_t current_value = bitset_get(&procman->hit_mask, x, y);
-          bool should_set_mask_bit = false;
+          bool should_set_mask_bit = current_value == BITSET_UNSET_VALUE;
 
-          if (current_value == BITSET_UNSET_VALUE) {
-            should_set_mask_bit = true;
-          } else {
+          // if there's another window there,
+          // check if it's above the current one or it's focused
+          if (!should_set_mask_bit) {
             process_t *other_proc = &procman->processes[current_value];
-            if ((other_proc->flags & PROCESS_HAS_WINDOW) == 0) {
-              should_set_mask_bit = true;
-            }
+            if ((other_proc->flags & PROCESS_HAS_WINDOW) == 0) continue;
             window_t *current_window = &other_proc->window;
-            if (current_window->layer < window->layer || window->focused) {
-              should_set_mask_bit = true;
-            }
+            should_set_mask_bit = current_window->layer > window->layer || window->focused;
           }
 
-          if (should_set_mask_bit) {
-            bitset_set(&procman->hit_mask, x, y, i);
-          }
+          // set the mask bit if it's the topmost window
+          if (should_set_mask_bit) bitset_set(&procman->hit_mask, x, y, i);
         }
     }
   }
@@ -202,6 +194,7 @@ void update_focused_window(procman_t *procman) {
   Vector2 mouse_pos = GetMousePosition();
   // check if the mouse is over any window
   int8_t proc_idx = bitset_get(&procman->hit_mask, mouse_pos.x, mouse_pos.y);
+
 
   if (proc_idx >= 0 && proc_idx <= 127) {
     process_t *process = &procman->processes[proc_idx];
@@ -223,6 +216,7 @@ void update_focused_window(procman_t *procman) {
           }
           other_proc->window.focused = false;
         }
+        window->focused = true;
       }
       if (alt && lmb) {
         window->focused = true;

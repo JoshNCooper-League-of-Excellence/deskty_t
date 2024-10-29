@@ -7,7 +7,7 @@
 #define BITSET_UNSET_VALUE -1
 
 typedef struct bitset_t {
-  uint64_t *values;
+  int64_t *values;
   int width, height;
 } bitset_t;
 
@@ -21,13 +21,12 @@ static inline bitset_t new_bitset(int width, int height) {
   };
   return mask;
 }
+static inline void free_bitset(bitset_t *mask) { free(mask->values); }
 
 static inline void bitset_clear_all(bitset_t *mask) {
   int n_values = (mask->width * mask->height + 7) / 8;
   memset(mask->values, BITSET_UNSET_VALUE, n_values * sizeof(uint64_t));
 }
-
-static inline void free_bitset(bitset_t *mask) { free(mask->values); }
 
 static inline int8_t bitset_get(bitset_t *mask, int x, int y) {
   if (x < 0 || x >= mask->width || y < 0 || y >= mask->height)  return 0;

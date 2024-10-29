@@ -11,11 +11,11 @@ void init_os() {
 }
 
 int main(void) {
-  init_os();
-
   InitWindow(800, 600, "Window Manager");
   SetWindowState(FLAG_WINDOW_RESIZABLE);
   SetTargetFPS(60);
+
+  init_os();
 
   const char * path = procman.proc_list.paths[0];
   spawn_process(&procman, path);
