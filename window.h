@@ -2,14 +2,21 @@
 #define WINMAN_H
 
 #include <raylib.h>
-
 #include <dlfcn.h>
 #include <raylib.h>
 #include <raymath.h>
 #include <stdint.h>
-#include "bitset.h"
 
-static FilePathList load_app_database() { return LoadDirectoryFiles("./user"); }
+
+// These are constants used for drawing the window, They are temporary, and
+// should later be replaced with an extensible styling system.
+#define FONT_SIZE 5
+#define Y_PADDING 10
+#define TITLE_BAR_ROUNDNESS 0.3
+#define WINDOW_BORDER_ROUNDNESS 0.05
+#define SUBDIVISIONS 6
+#define Y_PADDING_TITLE 8
+
 
 #define clamp(v, min, max) ((v) < (min) ? (min) : ((v) > (max) ? (max) : (v)))
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -42,10 +49,7 @@ typedef struct {
   Vector2 mouse_wheel;
 } input_state_t;
 
-static void update_input_state(input_state_t *state);
 
-struct window_t;
-typedef void (*window_callback)(struct window_t *);
 
 typedef enum WindowFlags {
   WINDOW_HIDDEN = 1 << 0,
@@ -60,19 +64,19 @@ typedef struct window_t {
                      // force close.
   // bool visible;
 
-  // Theming
+  // Theming, todo: make a theming system that's extensible
   Color border_color;
   float border_thickness;
 
-  rl_draw_command_t draw_command_stack[2048];
+  rl_draw_command_t draw_command_stack[2048]; // TODO: we shouldn't treat this like a stack, otherwise
+  // things drawn last by the app will appear on bottom.
   int stack_length;
+
   int layer;
   bool focused;
   int flags;
 
-  // .so stuff
-  void *dl_handle;
-  window_callback init, update, deinit;
+  // for reading input.
   input_state_t *input_state;
 } window_t;
 
@@ -113,28 +117,28 @@ static void draw_triangle(window_t *window, Color color, Vector2 position,
   }
 }
 
-typedef struct winman_t {
-  window_t windows[48];
-  int window_count;
-  FilePathList app_database;
-  input_state_t input_state;
-  bitset_t hit_mask;
-} winman_t;
+void update_input_state(input_state_t *state);
 
-window_t new_window(struct winman_t *winman);
+struct process_t;
+
+window_t *init_window(struct process_t *proc, int w, int h, const char *title);
+
+void draw_window(struct process_t *proc, window_t *window);
 void free_window(window_t *window);
 
+#define WIN_RECT                                                               \
+  {pos.x, pos.y, screen_size.x / SCREEN_DIVISION_FACTOR,                       \
+   screen_size.y / SCREEN_DIVISION_FACTOR}
+
+struct procman_t;
+
+void update_hit_mask(struct procman_t *procman);
+Rectangle get_next_free_window_bounds(struct procman_t *);
+void update_focused_window(struct procman_t *winman);
 void _internal_draw_all_commands_window(window_t *window);
-winman_t new_winman();
-void load_app(winman_t *winman, const char *path);
-
-void update_winman(winman_t *winman);
-void draw_winman(winman_t *winman);
-
 static bool is_key_down(input_state_t *state, int key) {
   return state->keys[key];
 }
-
 static bool is_key_pressed(input_state_t *state, int key) {
   static bool previous_keys[349] = {0};
   bool pressed = state->keys[key] && !previous_keys[key];
