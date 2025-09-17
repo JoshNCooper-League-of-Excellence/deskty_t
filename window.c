@@ -4,7 +4,6 @@
 #include "os.h"
 #include <dlfcn.h>
 #include <raylib.h>
-#include <stdio.h>
 
 #define SCREEN_DIVISION_FACTOR 6
 #define FOCUSED_LAYER 100
@@ -14,15 +13,18 @@
 // Scissor cull the commands to the window's bounds.
 // Adjust each shape to the window's own pixel space.
 void _internal_draw_all_commands_window(window_t *window) {
-  BeginScissorMode(window->bounds.x, window->bounds.y, window->bounds.width,
-                   window->bounds.height);
-  while (window->stack_length > 0) {
-    auto command = window->draw_command_stack[--window->stack_length];
+  Camera2D camera = {0};
+  camera.target = (Vector2){0, 0};
+  camera.offset = (Vector2){window->bounds.x, window->bounds.y};
+  camera.rotation = 0.0f;
+  camera.zoom = 1.0f;
 
-    // put into window space.
-    command.position = Vector2Add(
-        command.position, (Vector2){window->bounds.x, window->bounds.y});
+  BeginScissorMode(window->bounds.x, window->bounds.y, window->bounds.width, window->bounds.height);
+  BeginMode2D(camera);
 
+
+  for (int i = 0; i < window->stack_length; ++i) {
+    rl_draw_command_t command = window->draw_command_stack[i];
     switch (command.shape) {
     case DRAW_RECTANGLE:
       DrawRectangleV(command.position, command.size, command.color);
@@ -38,6 +40,9 @@ void _internal_draw_all_commands_window(window_t *window) {
       break;
     }
   }
+  window->stack_length = 0;
+
+  EndMode2D(); // End 2D mode with the camera
   EndScissorMode();
 }
 
@@ -306,9 +311,10 @@ void draw_window(struct process_t *proc, window_t *window) {
   _internal_draw_all_commands_window(window);
 }
 
-window_t *init_window(process_t *proc, int w, int h, const char *title) {
+void init_window(process_t *proc, int w, int h, const char *title) {
   window_t *window = &proc->window;
   *window = (window_t){0};
+  window->input_state = &proc->procman->input_state;
   window->bounds = get_next_free_window_bounds(proc->procman);
   window->title = title;
   proc->flags |= PROCESS_HAS_WINDOW;
@@ -318,5 +324,4 @@ window_t *init_window(process_t *proc, int w, int h, const char *title) {
   window->layer = 0;
   window->focused = false;
   window->should_close = false;
-  return window;
 }

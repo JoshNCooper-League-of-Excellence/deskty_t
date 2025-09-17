@@ -11,17 +11,24 @@ typedef struct bitset_t {
   int width, height;
 } bitset_t;
 
-static inline bitset_t new_bitset(int width, int height) {
+static inline void bitset_resize(bitset_t *bitset, int new_width,
+                                 int new_height) {
+  int n_bytes = new_width * new_height;
+  int n_values = (n_bytes + 7) / 8;
+  bitset->width = new_width;
+  bitset->height = new_height;
+  bitset->values = realloc(bitset->values, n_values * sizeof(uint64_t));
+}
+
+static inline void bitset_init(bitset_t *bitset, int width, int height) {
   int n_bytes = width * height;
   int n_values = (n_bytes + 7) / 8;
-  bitset_t mask = {
-    .width = width,
-    .height = height,
-    .values = calloc(n_values, sizeof(uint64_t)),
-  };
-  return mask;
+  bitset->width = width;
+  bitset->height = height;
+  bitset->values = calloc(n_values, sizeof(uint64_t));
 }
-static inline void free_bitset(bitset_t *mask) { free(mask->values); }
+
+static inline void bitset_free(bitset_t *mask) { free(mask->values); }
 
 static inline void bitset_clear_all(bitset_t *mask) {
   int n_values = (mask->width * mask->height + 7) / 8;
@@ -29,7 +36,8 @@ static inline void bitset_clear_all(bitset_t *mask) {
 }
 
 static inline int8_t bitset_get(bitset_t *mask, int x, int y) {
-  if (x < 0 || x >= mask->width || y < 0 || y >= mask->height)  return 0;
+  if (x < 0 || x >= mask->width || y < 0 || y >= mask->height)
+    return 0;
   int index = y * mask->width + x;
   int ind_index = index / 8;
   int offset = (index % 8) * 8;
@@ -37,7 +45,8 @@ static inline int8_t bitset_get(bitset_t *mask, int x, int y) {
 }
 
 static inline void bitset_set(bitset_t *mask, int x, int y, int8_t value) {
-  if (x < 0 || x >= mask->width || y < 0 || y >= mask->height) return;
+  if (x < 0 || x >= mask->width || y < 0 || y >= mask->height)
+    return;
   int index = y * mask->width + x;
   int int_idx = index / 8;
   int offset = (index % 8) * 8;
@@ -48,7 +57,8 @@ static inline void bitset_set(bitset_t *mask, int x, int y, int8_t value) {
 }
 
 static inline void bitset_clear(bitset_t *mask, int x, int y) {
-  if (x < 0 || x >= mask->width || y < 0 || y >= mask->height) return;
+  if (x < 0 || x >= mask->width || y < 0 || y >= mask->height)
+    return;
   int index = y * mask->width + x;
   int int_idx = index / 8;
   int offset = (index % 8) * 8;

@@ -49,8 +49,6 @@ typedef struct {
   Vector2 mouse_wheel;
 } input_state_t;
 
-
-
 typedef enum WindowFlags {
   WINDOW_HIDDEN = 1 << 0,
   WINDOW_SHOWN = 1 << 1,
@@ -121,7 +119,7 @@ void update_input_state(input_state_t *state);
 
 struct process_t;
 
-window_t *init_window(struct process_t *proc, int w, int h, const char *title);
+void init_window(struct process_t *proc, int w, int h, const char *title);
 
 void draw_window(struct process_t *proc, window_t *window);
 void free_window(window_t *window);
@@ -136,6 +134,8 @@ void update_hit_mask(struct procman_t *procman);
 Rectangle get_next_free_window_bounds(struct procman_t *);
 void update_focused_window(struct procman_t *winman);
 void _internal_draw_all_commands_window(window_t *window);
+
+
 static bool is_key_down(input_state_t *state, int key) {
   return state->keys[key];
 }

@@ -9,8 +9,9 @@ typedef struct {
   uint64_t ptr;
 } arena_t;
 
-arena_t new_arena(uint64_t size);
-void free_arena(arena_t *arena);
+void arena_free(arena_t *arena);
+void arena_init(arena_t *arena, uint64_t size);
+
 char *arena_alloc(arena_t *arena, uint64_t size);
 
 #endif

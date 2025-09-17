@@ -1,14 +1,14 @@
 #include "arena.h"
 #include <stdlib.h>
 
-arena_t new_arena(uint64_t size) {
-  arena_t arena = {0};
-  arena.memory = malloc(size);
-  arena.size = size;
-  arena.ptr = 0;
-  return arena;
+void arena_init(arena_t *arena, uint64_t size) {
+  arena->memory = malloc(size);
+  arena->size = size;
+  arena->ptr = 0;
 }
-void free_arena(arena_t *arena) { free(arena->memory); }
+
+void arena_free(arena_t *arena) { free(arena->memory); }
+
 char *arena_alloc(arena_t *arena, uint64_t size) {
   if (arena->ptr + size > arena->size) {
     return NULL;
