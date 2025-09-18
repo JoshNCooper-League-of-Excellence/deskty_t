@@ -1,8 +1,11 @@
+#include "gfx.h"
 #include "os.h"
 #include "window.h"
-#include <raylib.h>
+#include <GL/gl.h>
+#include <GLFW/glfw3.h>
+#include <stdio.h>
 
-// fulfill extern
+// fulfill externs
 procman_t procman;
 
 void init_os() {
@@ -10,24 +13,26 @@ void init_os() {
 }
 
 int main(void) {
-  InitWindow(800, 600, "Window Manager");
-  SetWindowState(FLAG_WINDOW_RESIZABLE);
-  SetTargetFPS(60);
-  init_os();
+  // init_os();
+  // spawn_process(&procman, procman.proc_list.values[0]);
+  // spawn_process(&procman, procman.proc_list.values[1]);
+  
+  gfx_init();
+  GLFWwindow *window = gfx_get_window();
 
-  spawn_process(&procman, procman.proc_list.paths[0]);
-  spawn_process(&procman, procman.proc_list.paths[1]);
+  while (!glfwWindowShouldClose(window)) {
+    gfx_begin_frame();
 
-  while(!WindowShouldClose()) {
-    BeginDrawing();
-    ClearBackground(BLACK);
-    DrawFPS(0, 0);
-
-    update_input_state(&procman.input_state);
-    update_hit_mask(&procman);
-    update_focused_window(&procman);
-    update_procman(&procman);
-
-    EndDrawing();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    // update_input_state(window, &procman.input_state);
+    // update_hit_mask(&procman);
+    // update_focused_window(&procman);
+    // update_procman(&procman);
+    
+    glfwSwapBuffers(window);
+    glfwPollEvents();
   }
+
+  glfwTerminate();
 }

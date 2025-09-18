@@ -1,0 +1,3 @@
+# .clang-format configuration file
+
+ColumnLimit: 100
