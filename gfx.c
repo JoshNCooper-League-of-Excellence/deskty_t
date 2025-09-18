@@ -46,6 +46,12 @@ void gfx_init() {
   glfwMakeContextCurrent(gContext.window);
   glfwSwapInterval(1);
 
+  GLenum err = glewInit();
+  if (err != GLEW_OK) {
+    fprintf(stderr, "glewInit() failed: %s\n", glewGetErrorString(err));
+    return;
+  }
+
   glfwSetErrorCallback(glfw_error_handler);
   glfwSetFramebufferSizeCallback(gContext.window, glfw_resize_handler);
   glClearColor(0, 0, 0, 1);
@@ -68,4 +74,47 @@ bool check_point_in_rect(Vector2 point, Rectangle rect) {
 bool check_rectangles_overlap(Rectangle rect1, Rectangle rect2) {
   return rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x &&
          rect1.y < rect2.y + rect2.height && rect1.y + rect1.height > rect2.y;
+}
+
+void check_shader_compile(GLuint sh, const char *name) {
+  GLint ok = 0;
+  glGetShaderiv(sh, GL_COMPILE_STATUS, &ok);
+  if (!ok) {
+    char buf[1024];
+    glGetShaderInfoLog(sh, sizeof(buf), NULL, buf);
+    fprintf(stderr, "shader %s compile error: %s\n", name, buf);
+  }
+}
+
+void check_program_link(GLuint prog) {
+  GLint ok = 0;
+  glGetProgramiv(prog, GL_LINK_STATUS, &ok);
+  if (!ok) {
+    char buf[1024];
+    glGetProgramInfoLog(prog, sizeof(buf), NULL, buf);
+    fprintf(stderr, "program link error: %s\n", buf);
+  }
+}
+
+GLuint gfx_compile_shader(const char *vertex, const char *fragment) {
+  GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vs, 1, &vertex, NULL);
+  glCompileShader(vs);
+  check_shader_compile(vs, "vertex");
+
+  GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fs, 1, &fragment, NULL);
+  glCompileShader(fs);
+  check_shader_compile(fs, "fragment");
+
+  GLuint program = glCreateProgram();
+  glAttachShader(program, vs);
+  glAttachShader(program, fs);
+  glLinkProgram(program);
+  check_program_link(program);
+
+  glDeleteShader(vs);
+  glDeleteShader(fs);
+
+  return program;
 }

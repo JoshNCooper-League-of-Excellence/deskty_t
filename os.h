@@ -46,8 +46,8 @@ typedef struct procman_t {
 
 void procman_init(procman_t *procman);
 
-#define COMPILE_COMMAND_FORMAT                                                 \
-  "clang -std=c23 -g -shared -fPIC -lraylib -o %s %s 1>&2 2>&1"
+#define COMPILE_COMMAND_FORMAT \
+  "clang -std=c23 -g -shared -fPIC -o %s %s -Lbin -ldesky_t -lGL -lGLEW -lglfw"
 
 void *compile_and_open_process(const char *path);
 void spawn_process(procman_t *procman, const char *path);

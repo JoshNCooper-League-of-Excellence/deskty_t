@@ -12,14 +12,14 @@
 
 
 void update_input_state(GLFWwindow *window, input_state_t *state) {
-  for (int key = 0; key < GLFW_KEY_LAST; ++key) {
+
+  int a, b;
+  for (int key = 32; key < GLFW_KEY_LAST; ++key) {
     state->keys[key] = glfwGetKey(window, key);
   }
-
-  for (int i = 0; i < GLFW_MOUSE_BUTTON_LAST; ++i) {
-    state->mouse_buttons[i] = glfwGetMouseButton(window, i);
+  for (int mb = 0; mb < GLFW_MOUSE_BUTTON_LAST; ++mb) {
+    state->mouse_buttons[mb] = glfwGetMouseButton(window, mb);
   }
-
   double mx, my;
   glfwGetCursorPos(window, &mx, &my);
   state->mouse_position = (Vector2){mx, my};

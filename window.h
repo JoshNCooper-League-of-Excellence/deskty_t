@@ -70,7 +70,7 @@ void update_focused_window(struct procman_t *winman);
 
 static bool is_key_down(input_state_t *state, int key) { return state->keys[key]; }
 static bool is_key_pressed(input_state_t *state, int key) {
-  static bool previous_keys[349] = {0};
+  static bool previous_keys[GLFW_KEY_LAST] = {0};
   bool pressed = state->keys[key] && !previous_keys[key];
   previous_keys[key] = state->keys[key];
   return pressed;

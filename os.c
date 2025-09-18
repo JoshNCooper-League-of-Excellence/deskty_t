@@ -1,11 +1,15 @@
 #include "os.h"
 #include "bitset.h"
 #include "gfx.h"
+#include "stdio.h"
 #include "util.h"
 #include "window.h"
 #include <GLFW/glfw3.h>
+
+#include <errno.h>
+#include <sys/stat.h>
 #include <stdio.h>
-#include "stdio.h"
+#include <unistd.h>
 
 void init_window(process_t *, int, int, const char *);
 
@@ -31,8 +35,7 @@ void spawn_process(procman_t *procman, const char *path) {
 
   if (!proc.init || !proc.update || !proc.deinit) {
     printf("Unable to find init, update, or deinit functions in %s\n", path);
-    printf("functions: init=%p, update=%p, deinit=%p\n", proc.init, proc.update,
-           proc.deinit);
+    printf("functions: init=%p, update=%p, deinit=%p\n", proc.init, proc.update, proc.deinit);
     return;
   }
 
@@ -48,7 +51,7 @@ void procman_init(procman_t *procman) {
 }
 
 void update_procman(procman_t *procman) {
-  
+
   if (gfx_window_resized()) {
     Vector2I size = gfx_window_size();
     bitset_resize(&procman->hit_mask, size.x, size.y);
@@ -66,33 +69,63 @@ void update_procman(procman_t *procman) {
 
 void *compile_and_open_process(const char *path) {
   static char so_path[512];
-  static char compile_command[512];
-  static char name[512];
-  
-  filename_without_extension((char*)path, (char**)&name);
+  static char compile_command[1024];
+  static char src_path[512];
+  char base[512];
 
-  snprintf(so_path, sizeof(so_path), "binaries/%s.so", name);
+  if (!path)
+    return NULL;
 
-  int required_length = snprintf(nullptr, 0, COMPILE_COMMAND_FORMAT, so_path, path);
+  if (access(path, F_OK) == 0) {
+    strncpy(src_path, path, sizeof(src_path));
+    src_path[sizeof(src_path) - 1] = '\0';
+  } else {
+    int rc = snprintf(src_path, sizeof(src_path), "user/%s", path);
+    if (rc < 0 || rc >= (int)sizeof(src_path)) {
+      fprintf(stderr, "source path too long\n");
+      return NULL;
+    }
+    if (access(src_path, F_OK) != 0) {
+      fprintf(stderr, "source file not found: %s\n", path);
+      return NULL;
+    }
+  }
 
-  snprintf(compile_command, required_length + 1, COMPILE_COMMAND_FORMAT,
-           so_path, path);
+  if (mkdir("binaries", 0755) != 0 && errno != EEXIST) {
+    perror("mkdir(binaries)");
+    return NULL;
+  }
 
-  printf("compiling... \e[1;32m%s\e[0m, :: \e[1;34m%s\e[0m\n", so_path,
-         compile_command);
+  const char *slash = strrchr(src_path, '/');
+  const char *filename = slash ? slash + 1 : src_path;
+  filename_without_extension(filename, base, sizeof(base));
 
-  // compile this ish.
+  int rc = snprintf(so_path, sizeof(so_path), "binaries/%s.so", base);
+  if (rc < 0 || rc >= (int)sizeof(so_path)) {
+    fprintf(stderr, "so path too long\n");
+    return NULL;
+  }
+
+  rc =
+      snprintf(compile_command, sizeof(compile_command), COMPILE_COMMAND_FORMAT, so_path, src_path);
+  if (rc < 0 || rc >= (int)sizeof(compile_command)) {
+    fprintf(stderr, "compile command too long\n");
+    return NULL;
+  }
+
+  printf("compiling... %s, :: %s\n", so_path, compile_command);
   int result = system(compile_command);
-
+  printf("done!\n");
   if (result != 0) {
-    printf("Failed to compile %s.. compiler returned %d\n", path, result);
-    return nullptr;
+    printf("Failed to compile %s.. compiler returned %d\n", src_path, result);
+    return NULL;
   }
 
   void *dl_handle = dlopen(so_path, RTLD_NOW);
   if (!dl_handle) {
     printf("Unable to load shared object file! %s\n", so_path);
-    return nullptr;
+    fprintf(stderr, "dlopen error: %s\n", dlerror());
+    return NULL;
   }
 
   return dl_handle;

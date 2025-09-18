@@ -1,5 +1,7 @@
 #ifndef GFX_H
 #define GFX_H
+
+#include "GL/glew.h"
 #include "GLFW/glfw3.h"
 
 typedef struct {
@@ -8,8 +10,8 @@ typedef struct {
 
 #define CLITERAL(v) (v)
 
-#define WHITE CLITERAL(Color){255, 255, 255, 255};
-#define BLACK CLITERAL(Color){0, 0, 0, 255};
+#define WHITE CLITERAL(Color){255, 255, 255, 255}
+#define BLACK CLITERAL(Color){0, 0, 0, 255}
 #define LIGHT_GRAY CLITERAL(Color){211, 211, 211, 255}
 
 typedef struct {
@@ -45,5 +47,8 @@ Vector2 gfx_get_mouse_delta();
 
 bool check_point_in_rect(Vector2 point, Rectangle rect);
 bool check_rectangles_overlap(Rectangle rect1, Rectangle rect2);
+
+GLuint gfx_compile_shader(const char *vertex, const char *fragment);
+
 
 #endif
