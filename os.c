@@ -6,8 +6,10 @@
 
 void init_window(process_t *, int, int, const char *);
 
+
+
 void spawn_process(procman_t *procman, const char *path) {
-  if (procman->process_count >= 48) {
+  if (procman->process_count >= MAX_PROC) {
     printf("reached maximum number of windows!");
     return;
   }

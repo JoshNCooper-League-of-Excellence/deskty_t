@@ -4,7 +4,7 @@
 #include "bitset.h"
 #include "window.h"
 
-#define MAX_PROCESSES 127
+#define MAX_PROC 127
 
 typedef enum ProcFlags {
   PROCESS_HAS_WINDOW = 1 << 0,
@@ -26,7 +26,7 @@ typedef struct process_t {
 } process_t;
 
 typedef struct procman_t {
-  process_t processes[MAX_PROCESSES];
+  process_t processes[MAX_PROC];
   int process_count;
 
   // for cleaning up timestamped compilation output
