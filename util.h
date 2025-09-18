@@ -28,7 +28,7 @@ void sb_append(string_builder_t *sb, const char *str);
 
 void sb_appendf(string_builder_t *sb, const char *format, ...);
 
-char *sb_get_string(const string_builder_t *sb);
+char *sb_copy_string(const string_builder_t *sb);
 
 void sb_appendch(string_builder_t *sb, char c);
 

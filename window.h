@@ -32,14 +32,14 @@ typedef enum WindowFlags {
 } WindowFlags;
 
 typedef struct window_t {
-  Rectangle bounds; // Do not set this, this is set by the window manager
+  rect bounds; // Do not set this, this is set by the window manager
 
   const char *title; // feel free to modify this.
 
   bool should_close; // This is set by the window manager, but can be set to
                      // force close.
 
-  Color border_color; // Theming, todo: make a theming system that's extensible
+  color border_color; // Theming, todo: make a theming system that's extensible
   float border_thickness;
 
   int layer;
@@ -65,7 +65,7 @@ void free_window(window_t *window);
 struct procman_t;
 
 void update_hit_mask(struct procman_t *procman);
-Rectangle get_next_free_window_bounds(struct procman_t *);
+rect get_next_free_window_bounds(struct procman_t *);
 void update_focused_window(struct procman_t *winman);
 
 static bool is_key_down(input_state_t *state, int key) { return state->keys[key]; }

@@ -6,13 +6,8 @@ GLuint vbo, vao;
 
 GLuint program;
 
-typedef struct {
-  vec3 position;
-  vec3 scale;
-  vec4 color;
-} vertex_t;
 
-constexpr vertex_t vertices[] = {
+constexpr vertex vertices[] = {
   // First triangle
   {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},  // Top-left
   {{0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},   // Top-right
@@ -34,13 +29,13 @@ void init(process_t *proc) {
 
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)offsetof(vertex_t, position));
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void *)offsetof(vertex, position));
   glEnableVertexAttribArray(0);
 
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)offsetof(vertex_t, scale));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void *)offsetof(vertex, scale));
   glEnableVertexAttribArray(1);
 
-  glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void *)offsetof(vertex_t, color));
+  glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void *)offsetof(vertex, color));
   glEnableVertexAttribArray(2);
 
   string_builder_t vert = {0};
@@ -50,20 +45,17 @@ void init(process_t *proc) {
   }
 
   string_builder_t frag = {0};
-  if (!read_file_to_end("shader/frag.glsl", &frag)) {
+  if (!read_file_to_end("shader/rainbow-frag.glsl", &frag)) {
     printf("Unable to compile fragment shader\n");
     return;
   }
 
-  char *vert_source = sb_get_string(&vert), *frag_source = sb_get_string(&frag);
+  char *vert_source = vert.value, *frag_source = frag.value;
 
   program = gfx_compile_shader(vert_source, frag_source);
 
   sb_free(&vert);
   sb_free(&frag);
-
-  free(vert_source);
-  free(frag_source);
 
   proc->init_window(proc, 200, 200, "boxer!");
 }

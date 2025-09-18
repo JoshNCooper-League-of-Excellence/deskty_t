@@ -9,7 +9,7 @@ void init(process_t *process) { process->init_window(process, 20, 20, "My Window
 struct Player {
   vec2 position;
   vec2 velocity;
-  Color color;
+  color color;
 } player = {(vec2){0, 0}, (vec2){0, 0}, BLACK};
 
 static void draw_player(window_t *window, vec2 screen_size) {

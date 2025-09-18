@@ -41,8 +41,6 @@ void update_hit_mask(procman_t *procman) {
           int8_t current_value = bitset_get(&procman->hit_mask, x, y);
           bool should_set_mask_bit = current_value == BITSET_UNSET_VALUE;
 
-          // if there's another window there,
-          // check if it's above the current one or it's focused
           if (!should_set_mask_bit) {
             process_t *other_proc = &procman->processes[current_value];
             if ((other_proc->flags & PROCESS_HAS_WINDOW) == 0)
@@ -51,7 +49,6 @@ void update_hit_mask(procman_t *procman) {
             should_set_mask_bit = current_window->layer > window->layer || window->focused;
           }
 
-          // set the mask bit if it's the topmost window
           if (should_set_mask_bit)
             bitset_set(&procman->hit_mask, x, y, i);
         }
@@ -102,13 +99,13 @@ void update_focused_window(procman_t *procman) {
   }
 }
 
-Rectangle get_next_free_window_bounds(procman_t *procman) {
+rect get_next_free_window_bounds(procman_t *procman) {
   bool found_position = false;
   vec2 pos = {10, 10};
   
   vec2 win_size = gfx_window_size_f();
 
-  Rectangle rect = {pos.x, pos.y, win_size.x / SCREEN_DIVISION_FACTOR,
+  rect rect = {pos.x, pos.y, win_size.x / SCREEN_DIVISION_FACTOR,
                     win_size.y / SCREEN_DIVISION_FACTOR};
 
   while (!found_position) {
@@ -144,7 +141,6 @@ void draw_window(struct process_t *proc, window_t *window) {
   auto y = window->bounds.y - Y_PADDING;
   auto half_width = window->bounds.width / 2;
 
-
   // auto text_w = MeasureText(window->title, FONT_SIZE) / 2.0;
   // Rectangle title_rect = {x, y, window->bounds.width, Y_PADDING_TITLE};
   // DrawRectangleRounded(title_rect, TITLE_BAR_ROUNDNESS, SUBDIVISIONS, window->border_color);
@@ -158,7 +154,7 @@ void draw_window(struct process_t *proc, window_t *window) {
 
   // Close button // TODO: FIX ME.. Shouldn't be here, and it looks
   // TERRIBLE.
-  Rectangle closeButton = {window->bounds.x + window->bounds.width - 12,
+  rect closeButton = {window->bounds.x + window->bounds.width - 12,
                            window->bounds.y - Y_PADDING_TITLE - 1, 9, 9};
 
   if (check_point_in_rect(gfx_get_mouse_position(), closeButton)) {

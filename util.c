@@ -103,7 +103,7 @@ void sb_appendf(string_builder_t *sb, const char *format, ...) {
   sb_append(sb, buffer);
 }
 
-char *sb_get_string(const string_builder_t *sb) {
+char *sb_copy_string(const string_builder_t *sb) {
   char *result = (char *)malloc(sb->length + 1);
   memcpy(result, sb->value, sb->length);
   result[sb->length] = '\0';
