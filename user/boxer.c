@@ -12,7 +12,7 @@ typedef struct {
   vec4 color;
 } vertex_t;
 
-vertex_t vertices[] = {
+constexpr vertex_t vertices[] = {
   // First triangle
   {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},  // Top-left
   {{0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},   // Top-right
@@ -25,6 +25,7 @@ vertex_t vertices[] = {
 };
 
 void init(process_t *proc) {
+
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
 
@@ -64,14 +65,21 @@ void init(process_t *proc) {
   free(vert_source);
   free(frag_source);
 
-  // proc->init_window(proc, 200, 200, "boxer!");
+  proc->init_window(proc, 200, 200, "boxer!");
 }
 
 void update(process_t *proc) {
+
+  int timeLoc;
+  if ((timeLoc = glGetUniformLocation(program, "time")) != -1) {
+    glUniform1f(timeLoc, glfwGetTime());
+  }
+
   glUseProgram(program);
   glBindVertexArray(vao);
   glDrawArrays(GL_TRIANGLES, 0, 6);
   glBindVertexArray(0);
+
 }
 
 void deinit(process_t *proc) {}
