@@ -7,9 +7,9 @@
 
 typedef struct {
   LIST_OF(vertex) vertices;
-} draw_rect_cmd_t;
+} draw_cmd_t;
 
-DEFINE_LIST(draw_rect_cmd_t)
+DEFINE_LIST(draw_cmd_t)
 
 struct {
   GLuint vbo, vao, program;
@@ -18,11 +18,11 @@ struct {
   vec2 mouse_position;
   vec2 mouse_delta;
   GLFWwindow *window;
-  LIST_OF(draw_rect_cmd_t) cmds;
+  LIST_OF(draw_cmd_t) cmds;
 } gCtx = {0};
 
 void draw_rectangle(rect rect, color color) {
-  draw_rect_cmd_t cmd = {0};
+  draw_cmd_t cmd = {0};
 
   vertex a, b, c, d;
 
@@ -37,6 +37,9 @@ void draw_rectangle(rect rect, color color) {
   LIST_PUSH(cmd.vertices, a);
   LIST_PUSH(cmd.vertices, b);
   LIST_PUSH(cmd.vertices, c);
+  
+  LIST_PUSH(cmd.vertices, a);
+  LIST_PUSH(cmd.vertices, c);
   LIST_PUSH(cmd.vertices, d);
 
   LIST_PUSH(gCtx.cmds, cmd);
@@ -49,7 +52,24 @@ void gfx_begin_frame() {
   gCtx.mouse_position = (vec2){mx, my};
 }
 
-void gfx_end_frame() {}
+void gfx_end_frame() {
+  glUseProgram(gCtx.program);
+  glBindVertexArray(gCtx.vao);
+  glBindBuffer(GL_ARRAY_BUFFER, gCtx.vbo);
+
+  for (int i = 0; i < gCtx.cmds.length; ++i) {
+    draw_cmd_t cmd = gCtx.cmds.data[i];
+    glBufferData(GL_ARRAY_BUFFER, cmd.vertices.length * sizeof(vertex), cmd.vertices.data, GL_STATIC_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, cmd.vertices.length);
+  }
+
+  glUseProgram(0);
+  glBindVertexArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  LIST_CLEAR(gCtx.cmds);
+
+}
+
 
 void glfw_resize_handler(GLFWwindow *window, int width, int height) {
   gCtx.window_resized = true;

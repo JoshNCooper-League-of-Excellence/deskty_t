@@ -69,10 +69,22 @@ rect get_next_free_window_bounds(struct procman_t *);
 void update_focused_window(struct procman_t *winman);
 
 static bool is_key_down(input_state_t *state, int key) { return state->keys[key]; }
+
 static bool is_key_pressed(input_state_t *state, int key) {
   static bool previous_keys[GLFW_KEY_LAST] = {0};
   bool pressed = state->keys[key] && !previous_keys[key];
   previous_keys[key] = state->keys[key];
+  return pressed;
+}
+
+static bool is_mouse_button_down(input_state_t *state, int button) {
+  return state->mouse_buttons[button];
+}
+
+static bool is_mouse_button_pressed(input_state_t *state, int button) {
+  static bool previous_mouse_buttons[GLFW_MOUSE_BUTTON_LAST] = {0};
+  bool pressed = state->mouse_buttons[button] && !previous_mouse_buttons[button];
+  previous_mouse_buttons[button] = state->mouse_buttons[button];
   return pressed;
 }
 

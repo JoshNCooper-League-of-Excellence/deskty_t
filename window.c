@@ -141,9 +141,10 @@ void draw_window(struct process_t *proc, window_t *window) {
   auto y = window->bounds.y - Y_PADDING;
   auto half_width = window->bounds.width / 2;
 
+  rect title_rect = {x, y, window->bounds.width, Y_PADDING_TITLE};
+  draw_rectangle(title_rect, window->border_color);
+  
   // auto text_w = MeasureText(window->title, FONT_SIZE) / 2.0;
-  // Rectangle title_rect = {x, y, window->bounds.width, Y_PADDING_TITLE};
-  // DrawRectangleRounded(title_rect, TITLE_BAR_ROUNDNESS, SUBDIVISIONS, window->border_color);
   // DrawText(window->title, window->bounds.x + half_width - text_w, y, FONT_SIZE, BLACK);
 
   // If the user decided to kill the application, this is how we do it.
@@ -154,25 +155,25 @@ void draw_window(struct process_t *proc, window_t *window) {
 
   // Close button // TODO: FIX ME.. Shouldn't be here, and it looks
   // TERRIBLE.
-  rect closeButton = {window->bounds.x + window->bounds.width - 12,
+  rect close_btn_rect = {window->bounds.x + window->bounds.width - 12,
                            window->bounds.y - Y_PADDING_TITLE - 1, 9, 9};
 
-  if (check_point_in_rect(gfx_get_mouse_position(), closeButton)) {
+  if (check_point_in_rect(gfx_get_mouse_position(), close_btn_rect)) {
 
-    if (is_key_pressed(window->input_state, GLFW_MOUSE_BUTTON_LEFT)) {
+    if (is_mouse_button_pressed(window->input_state, GLFW_MOUSE_BUTTON_LEFT)) {
       window->flags &= ~WINDOW_SHOWN;
       return;
     }
 
-    // DrawRectangleRounded(closeButton, 0.5, SUBDIVISIONS, WHITE);
+    draw_rectangle(close_btn_rect, WHITE);
+
     // DrawText("X", closeButton.x + 2, closeButton.y - 1, FONT_SIZE, BLACK);
   } else {
-    // DrawRectangleRounded(closeButton, 0.5, SUBDIVISIONS, RED);
+    draw_rectangle(close_btn_rect, RED);
     // DrawText("X", closeButton.x + 2, closeButton.y - 1, FONT_SIZE, WHITE);
   }
 
-  // DrawRectangleRoundedLinesEx(window->bounds, WINDOW_BORDER_ROUNDNESS, SUBDIVISIONS,
-                              // window->border_thickness, window->border_color);
+  draw_rectangle(window->bounds, WHITE);
 }
 
 void init_window(process_t *proc, int w, int h, const char *title) {

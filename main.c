@@ -28,8 +28,12 @@ int main(void) {
     update_focused_window(&procman);
     update_procman(&procman);
 
+    gfx_end_frame();
+
+    
     glfwSwapBuffers(window);
     glfwPollEvents();
+
   }
 
   glfwTerminate();

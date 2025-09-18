@@ -1,11 +1,10 @@
 #ifndef LIST_H
 #define LIST_H
 
-#include <string.h>
 #include "va_expand.h"
+#include <string.h>
 
 #define DEFINE_LISTS(...) __VA_ARGS_EXPAND(DEFINE_LIST, __VA_ARGS__)
-
 
 #define DEFINE_LIST(T)                                                                             \
   typedef struct T##_list {                                                                        \
@@ -59,5 +58,8 @@
     (list).length = 0;                                                                             \
   } while (0)
 
+#define LIST_FOREACH(list, var)                                                                    \
+  for (unsigned int __i = 0; __i < (list).length; ++__i)                                           \
+    auto var = (list).data[i];
 
 #endif

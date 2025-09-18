@@ -1,11 +1,7 @@
 #include "../os.h"
 #include <stddef.h>
-#include <stdio.h>
 
-GLuint vbo, vao;
-
-GLuint program;
-
+GLuint vbo, vao, program;
 
 constexpr vertex vertices[] = {
   // First triangle
@@ -38,39 +34,25 @@ void init(process_t *proc) {
   glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void *)offsetof(vertex, color));
   glEnableVertexAttribArray(2);
 
-  string_builder_t vert = {0};
-  if (!read_file_to_end("shader/vert.glsl", &vert)) {
-    printf("Unable to compile vertex shader\n");
+
+  if (!try_gfx_compile_shader_from_files("shader/vert.glsl", "shader/rainbow-frag.glsl", &program)) {
     return;
   }
-
-  string_builder_t frag = {0};
-  if (!read_file_to_end("shader/rainbow-frag.glsl", &frag)) {
-    printf("Unable to compile fragment shader\n");
-    return;
-  }
-
-  char *vert_source = vert.value, *frag_source = frag.value;
-
-  program = gfx_compile_shader(vert_source, frag_source);
-
-  sb_free(&vert);
-  sb_free(&frag);
 
   proc->init_window(proc, 200, 200, "boxer!");
 }
 
 void update(process_t *proc) {
 
-  int timeLoc;
-  if ((timeLoc = glGetUniformLocation(program, "time")) != -1) {
-    glUniform1f(timeLoc, glfwGetTime());
-  }
+  // int timeLoc;
+  // if ((timeLoc = glGetUniformLocation(program, "time")) != -1) {
+  //   glUniform1f(timeLoc, glfwGetTime());
+  // }
 
-  glUseProgram(program);
-  glBindVertexArray(vao);
-  glDrawArrays(GL_TRIANGLES, 0, 6);
-  glBindVertexArray(0);
+  // glUseProgram(program);
+  // glBindVertexArray(vao);
+  // glDrawArrays(GL_TRIANGLES, 0, 6);
+  // glBindVertexArray(0);
 
 }
 
