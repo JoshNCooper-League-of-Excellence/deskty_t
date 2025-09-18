@@ -22,7 +22,7 @@ void update_input_state(GLFWwindow *window, input_state_t *state) {
   }
   double mx, my;
   glfwGetCursorPos(window, &mx, &my);
-  state->mouse_position = (Vector2){mx, my};
+  state->mouse_position = (vec2){mx, my};
 }
 
 void update_hit_mask(procman_t *procman) {
@@ -60,7 +60,7 @@ void update_hit_mask(procman_t *procman) {
 }
 
 void update_focused_window(procman_t *procman) {
-  Vector2 mouse_pos = gfx_get_mouse_position();
+  vec2 mouse_pos = gfx_get_mouse_position();
 
   int8_t proc_idx = bitset_get(&procman->hit_mask, mouse_pos.x, mouse_pos.y);
 
@@ -70,7 +70,7 @@ void update_focused_window(procman_t *procman) {
       return;
     }
     window_t *window = &process->window;
-    Vector2 delta = gfx_get_mouse_delta();
+    vec2 delta = gfx_get_mouse_delta();
 
     if (check_point_in_rect(mouse_pos, window->bounds)) {
 
@@ -104,9 +104,9 @@ void update_focused_window(procman_t *procman) {
 
 Rectangle get_next_free_window_bounds(procman_t *procman) {
   bool found_position = false;
-  Vector2 pos = {10, 10};
+  vec2 pos = {10, 10};
   
-  Vector2 win_size = gfx_window_size_f();
+  vec2 win_size = gfx_window_size_f();
 
   Rectangle rect = {pos.x, pos.y, win_size.x / SCREEN_DIVISION_FACTOR,
                     win_size.y / SCREEN_DIVISION_FACTOR};

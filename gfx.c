@@ -4,17 +4,17 @@
 
 struct {
   bool window_resized;
-  Vector2I window_size;
-  Vector2 mouse_position;
-  Vector2 mouse_delta;
+  vec2I window_size;
+  vec2 mouse_position;
+  vec2 mouse_delta;
   GLFWwindow *window;
 } gContext;
 
 void gfx_begin_frame() {
   double mx, my;
   glfwGetCursorPos(gContext.window, &mx, &my);
-  gContext.mouse_delta = (Vector2){gContext.mouse_position.x - mx, gContext.mouse_position.y - my};
-  gContext.mouse_position = (Vector2){mx, my};
+  gContext.mouse_delta = (vec2){gContext.mouse_position.x - mx, gContext.mouse_position.y - my};
+  gContext.mouse_position = (vec2){mx, my};
 }
 
 void glfw_resize_handler(GLFWwindow *window, int width, int height) {
@@ -57,16 +57,16 @@ void gfx_init() {
   glClearColor(0, 0, 0, 1);
 }
 
-Vector2I gfx_window_size() { return gContext.window_size; }
-Vector2 gfx_window_size_f() { return (Vector2){gContext.window_size.x, gContext.window_size.y}; }
+vec2I gfx_window_size() { return gContext.window_size; }
+vec2 gfx_window_size_f() { return (vec2){gContext.window_size.x, gContext.window_size.y}; }
 
 bool gfx_window_resized() { return gContext.window_resized; }
-Vector2 gfx_get_mouse_position() { return gContext.mouse_position; }
-Vector2 gfx_get_mouse_delta() { return gContext.mouse_delta; }
+vec2 gfx_get_mouse_position() { return gContext.mouse_position; }
+vec2 gfx_get_mouse_delta() { return gContext.mouse_delta; }
 
 GLFWwindow *gfx_get_window() { return gContext.window; }
 
-bool check_point_in_rect(Vector2 point, Rectangle rect) {
+bool check_point_in_rect(vec2 point, Rectangle rect) {
   return point.x >= rect.x && point.x <= rect.x + rect.width && point.y >= rect.y &&
          point.y <= rect.y + rect.height;
 }

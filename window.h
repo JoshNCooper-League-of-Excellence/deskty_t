@@ -21,8 +21,8 @@ typedef struct {
   // these have a ton of empty values. use the GLFW_* macros to get the indices for each key.
   bool keys[GLFW_KEY_LAST];
   bool mouse_buttons[GLFW_MOUSE_BUTTON_LAST];
-  Vector2 mouse_position;
-  Vector2 mouse_wheel;
+  vec2 mouse_position;
+  vec2 mouse_wheel;
 } input_state_t;
 
 typedef enum WindowFlags {

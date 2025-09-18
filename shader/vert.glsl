@@ -1,8 +1,12 @@
 #version 450 core
 
 layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec3 aScale;
+layout(location = 2) in vec4 aColor;
+
+out vec4 color;
 
 void main() {
-  // Set the vertex position
-  gl_Position = vec4(aPos, 1.0);
+  color = aColor;
+  gl_Position = vec4(aPos * aScale, 1.0);
 }

@@ -16,15 +16,20 @@ typedef struct {
 
 typedef struct {
   float x, y;
-} Vector2;
+} vec2;
 
 typedef struct {
   int x, y;
-} Vector2I;
+} vec2I;
 
 typedef struct {
   float x, y, z;
-} Vector3;
+} vec3;
+
+typedef struct {
+  float x, y, z, w;
+} vec4;
+
 
 typedef struct {
   float x, y, width, height;
@@ -38,14 +43,14 @@ void gfx_begin_frame();
 
 GLFWwindow *gfx_get_window();
 
-Vector2I gfx_window_size();
-Vector2 gfx_window_size_f();
+vec2I gfx_window_size();
+vec2 gfx_window_size_f();
 bool gfx_window_resized();
 
-Vector2 gfx_get_mouse_position();
-Vector2 gfx_get_mouse_delta();
+vec2 gfx_get_mouse_position();
+vec2 gfx_get_mouse_delta();
 
-bool check_point_in_rect(Vector2 point, Rectangle rect);
+bool check_point_in_rect(vec2 point, Rectangle rect);
 bool check_rectangles_overlap(Rectangle rect1, Rectangle rect2);
 
 GLuint gfx_compile_shader(const char *vertex, const char *fragment);

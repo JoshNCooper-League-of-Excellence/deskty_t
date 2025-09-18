@@ -7,12 +7,12 @@
 void init(process_t *process) { process->init_window(process, 20, 20, "My Window!"); }
 
 struct Player {
-  Vector2 position;
-  Vector2 velocity;
+  vec2 position;
+  vec2 velocity;
   Color color;
-} player = {(Vector2){0, 0}, (Vector2){0, 0}, BLACK};
+} player = {(vec2){0, 0}, (vec2){0, 0}, BLACK};
 
-static void draw_player(window_t *window, Vector2 screen_size) {
+static void draw_player(window_t *window, vec2 screen_size) {
   player.velocity.y += 0.5;
 
   screen_size.y -= 50;
@@ -49,7 +49,7 @@ static void draw_player(window_t *window, Vector2 screen_size) {
 
 void update(process_t *process) {
   window_t *window = &process->window;
-  Vector2 screen_size = {window->bounds.width, window->bounds.height};
+  vec2 screen_size = {window->bounds.width, window->bounds.height};
   draw_player(window, screen_size);
 }
 

@@ -45,7 +45,7 @@ void spawn_process(procman_t *procman, const char *path) {
 
 void procman_init(procman_t *procman) {
   procman->proc_list = directory_read_files("./user");
-  Vector2I sz = gfx_window_size();
+  vec2I sz = gfx_window_size();
   bitset_init(&procman->hit_mask, sz.x, sz.y);
   procman->input_state = (input_state_t){0};
 }
@@ -53,7 +53,7 @@ void procman_init(procman_t *procman) {
 void update_procman(procman_t *procman) {
 
   if (gfx_window_resized()) {
-    Vector2I size = gfx_window_size();
+    vec2I size = gfx_window_size();
     bitset_resize(&procman->hit_mask, size.x, size.y);
   }
 
